@@ -6,9 +6,10 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
+  SafeAreaView,
 } from 'react-native';
 import { router } from 'expo-router';
-import { ArrowLeft, Send } from 'lucide-react-native';
+import { ArrowLeft, Send, PackageCheck } from 'lucide-react-native';
 import { THEME, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../theme';
 import { StatusBadge } from '../../components/StatusBadge';
 
@@ -19,11 +20,7 @@ export default function ShippingGenerateScreen() {
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
   const [courier, setCourier] = useState<string>('');
-  const [shippingLabel, setShippingLabel] = useState<{
-    trackingNumber: string;
-    awbNumber: string;
-    status: string;
-  } | null>(null);
+  const [shippingLabel, setShippingLabel] = useState<{ trackingNumber: string; awbNumber: string; status: string } | null>(null);
 
   const couriers = ['J&T Express', 'Pos Laju', 'Skynet', 'Lazada Logistics', 'GD Express'];
 
@@ -33,7 +30,6 @@ export default function ShippingGenerateScreen() {
       return;
     }
 
-    // Simulate label generation
     const trackingNum = `TRK${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
     const awbNum = `AWB${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
@@ -45,185 +41,90 @@ export default function ShippingGenerateScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft {...({ size: 24, color: '#FFFFFF', strokeWidth: 2.5 } as any)} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+          <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Generate Shipping</Text>
-        <View style={{ width: 24 }} />
+        <View style={styles.headerTextWrap}>
+          <Text style={styles.headerLabel}>Shipping</Text>
+          <Text style={styles.headerTitle}>Generate label</Text>
+        </View>
+        <PackageCheck size={20} color="#FFFFFF" />
       </View>
 
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Form Section */}
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         {!shippingLabel && (
           <View>
-            <Text style={styles.sectionTitle}>Recipient Information</Text>
-
+            <Text style={styles.sectionTitle}>Recipient information</Text>
             <View style={styles.formGroup}>
-              <Text style={styles.label}>Recipient Name *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter recipient name"
-                value={recipient}
-                onChangeText={setRecipient}
-                placeholderTextColor={THEME.text.light}
-              />
+              <Text style={styles.label}>Recipient name *</Text>
+              <TextInput style={styles.input} placeholder="Enter recipient name" value={recipient} onChangeText={setRecipient} placeholderTextColor={THEME.text.light} />
             </View>
 
-            <Text style={styles.sectionTitle}>Parcel Details</Text>
-
+            <Text style={styles.sectionTitle}>Parcel details</Text>
             <View style={styles.formGroup}>
               <Text style={styles.label}>Weight (kg) *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter weight"
-                value={weight}
-                onChangeText={setWeight}
-                keyboardType="decimal-pad"
-                placeholderTextColor={THEME.text.light}
-              />
+              <TextInput style={styles.input} placeholder="Enter weight" value={weight} onChangeText={setWeight} keyboardType="decimal-pad" placeholderTextColor={THEME.text.light} />
             </View>
 
-            <Text style={styles.subLabel}>Dimensions (Optional)</Text>
+            <Text style={styles.subLabel}>Dimensions (optional)</Text>
             <View style={styles.dimensionsRow}>
-              <TextInput
-                style={[styles.input, styles.dimensionInput]}
-                placeholder="Length"
-                value={length}
-                onChangeText={setLength}
-                keyboardType="decimal-pad"
-                placeholderTextColor={THEME.text.light}
-              />
-              <TextInput
-                style={[styles.input, styles.dimensionInput]}
-                placeholder="Width"
-                value={width}
-                onChangeText={setWidth}
-                keyboardType="decimal-pad"
-                placeholderTextColor={THEME.text.light}
-              />
-              <TextInput
-                style={[styles.input, styles.dimensionInput]}
-                placeholder="Height"
-                value={height}
-                onChangeText={setHeight}
-                keyboardType="decimal-pad"
-                placeholderTextColor={THEME.text.light}
-              />
+              <TextInput style={[styles.input, styles.dimensionInput]} placeholder="Length" value={length} onChangeText={setLength} keyboardType="decimal-pad" placeholderTextColor={THEME.text.light} />
+              <TextInput style={[styles.input, styles.dimensionInput]} placeholder="Width" value={width} onChangeText={setWidth} keyboardType="decimal-pad" placeholderTextColor={THEME.text.light} />
+              <TextInput style={[styles.input, styles.dimensionInput]} placeholder="Height" value={height} onChangeText={setHeight} keyboardType="decimal-pad" placeholderTextColor={THEME.text.light} />
             </View>
 
-            <Text style={styles.sectionTitle}>Courier Selection</Text>
-
+            <Text style={styles.sectionTitle}>Courier</Text>
             <View style={styles.courierGrid}>
-              {couriers.map((c) => (
-                <TouchableOpacity
-                  key={c}
-                  style={[
-                    styles.courierOption,
-                    courier === c && styles.courierOptionActive,
-                  ]}
-                  onPress={() => setCourier(c)}
-                >
-                  <Text
-                    style={[
-                      styles.courierText,
-                      courier === c && styles.courierTextActive,
-                    ]}
-                  >
-                    {c}
-                  </Text>
+              {couriers.map((item) => (
+                <TouchableOpacity key={item} style={[styles.courierOption, courier === item && styles.courierOptionActive]} onPress={() => setCourier(item)}>
+                  <Text style={[styles.courierText, courier === item && styles.courierTextActive]}>{item}</Text>
                 </TouchableOpacity>
               ))}
             </View>
 
-            {/* Generate Button */}
-            <TouchableOpacity
-              style={styles.generateButton}
-              onPress={handleGenerateLabel}
-            >
-              <Send {...({ size: 18, color: '#FFFFFF', strokeWidth: 2 } as any)} />
-              <Text style={styles.generateButtonText}>Generate Label</Text>
+            <TouchableOpacity style={styles.generateButton} onPress={handleGenerateLabel}>
+              <Send size={18} color="#FFFFFF" strokeWidth={2} />
+              <Text style={styles.generateButtonText}>Generate label</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Label Result Section */}
         {shippingLabel && (
           <View>
             <View style={styles.successCard}>
-              <StatusBadge status="shipped" label="Label Generated" />
-              <Text style={styles.successText}>Shipping label successfully generated!</Text>
+              <StatusBadge status="shipped" label="Label generated" />
+              <Text style={styles.successText}>Shipping label successfully generated.</Text>
             </View>
 
             <View style={styles.labelDetails}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Recipient</Text>
-                <Text style={styles.detailValue}>{recipient}</Text>
-              </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Courier</Text>
-                <Text style={styles.detailValue}>{courier}</Text>
-              </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Weight</Text>
-                <Text style={styles.detailValue}>{weight} kg</Text>
-              </View>
-
-              {(length || width || height) && (
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>Dimensions</Text>
-                  <Text style={styles.detailValue}>
-                    {length}×{width}×{height} cm
-                  </Text>
-                </View>
-              )}
+              <View style={styles.detailRow}><Text style={styles.detailLabel}>Recipient</Text><Text style={styles.detailValue}>{recipient}</Text></View>
+              <View style={styles.detailRow}><Text style={styles.detailLabel}>Courier</Text><Text style={styles.detailValue}>{courier}</Text></View>
+              <View style={styles.detailRow}><Text style={styles.detailLabel}>Weight</Text><Text style={styles.detailValue}>{weight} kg</Text></View>
+              {(length || width || height) && <View style={styles.detailRow}><Text style={styles.detailLabel}>Dimensions</Text><Text style={styles.detailValue}>{length}×{width}×{height} cm</Text></View>}
             </View>
 
             <View style={styles.labelBox}>
-              <Text style={styles.labelBoxTitle}>Tracking Number</Text>
-              <Text style={styles.trackingNumber}>
-                {shippingLabel.trackingNumber}
-              </Text>
-
-              <Text style={styles.labelBoxTitle}>AWB Number</Text>
+              <Text style={styles.labelBoxTitle}>Tracking number</Text>
+              <Text style={styles.trackingNumber}>{shippingLabel.trackingNumber}</Text>
+              <Text style={styles.labelBoxTitle}>AWB number</Text>
               <Text style={styles.awbNumber}>{shippingLabel.awbNumber}</Text>
             </View>
 
             <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.copyButton}>
-                <Text style={styles.copyButtonText}>Copy Tracking</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.newLabelButton}
-                onPress={() => {
-                  setShippingLabel(null);
-                  setRecipient('');
-                  setWeight('');
-                  setCourier('');
-                }}
-              >
-                <Text style={styles.newLabelButtonText}>Generate Another</Text>
-              </TouchableOpacity>
+              <TouchableOpacity style={styles.copyButton}><Text style={styles.copyButtonText}>Copy tracking</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.newLabelButton} onPress={() => { setShippingLabel(null); setRecipient(''); setWeight(''); setCourier(''); setLength(''); setWidth(''); setHeight(''); }}><Text style={styles.newLabelButtonText}>Generate another</Text></TouchableOpacity>
             </View>
           </View>
         )}
-
-        <View style={{ height: SPACING.xl }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: THEME.background,
   },
@@ -236,15 +137,38 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
     paddingTop: SPACING.xl,
   },
+  iconButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
+  headerTextWrap: {
+    flex: 1,
+    marginHorizontal: SPACING.md,
+  },
+  headerLabel: {
+    color: '#EDE9FE',
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.1,
+  },
   headerTitle: {
     fontSize: FONT_SIZES.lg,
     fontWeight: '700',
     color: '#FFFFFF',
+    marginTop: SPACING.xs,
   },
   content: {
     flex: 1,
+  },
+  contentContainer: {
     paddingHorizontal: SPACING['2xl'],
     paddingVertical: SPACING.lg,
+    paddingBottom: SPACING['3xl'],
   },
   sectionTitle: {
     fontSize: FONT_SIZES.base,

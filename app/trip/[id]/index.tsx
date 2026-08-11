@@ -6,9 +6,10 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  SafeAreaView,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft, CheckCircle2, Edit3, Package } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle2, Package, ShoppingBag } from 'lucide-react-native';
 import { useMockDatabase, markBuyListItemBought, getTripProducts, getTripOrders, getTripBuyListItems, getProductVariant, getProduct } from '../../../services/mockDatabase';
 import { THEME, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../../theme';
 import { StatusBadge } from '../../../components/StatusBadge';
@@ -33,41 +34,33 @@ export default function TripDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Header */}
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft {...({ size: 24, color: '#FFFFFF', strokeWidth: 2.5 } as any)} />
+        <TouchableOpacity onPress={() => router.back()} style={styles.iconButton}>
+          <ArrowLeft size={20} color="#FFFFFF" strokeWidth={2.5} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>{trip.name}</Text>
-        <View style={{ width: 24 }} />
+        <View style={styles.headerTextWrap}>
+          <Text style={styles.headerLabel}>Trip detail</Text>
+          <Text style={styles.headerTitle}>{trip.name}</Text>
+        </View>
+        <StatusBadge status="ready" label="Active" />
       </View>
 
-      {/* Tabs */}
       <View style={styles.tabsContainer}>
         {(['products', 'orders', 'buylist'] as TabType[]).map((tab) => (
           <TouchableOpacity
             key={tab}
-            style={[
-              styles.tab,
-              activeTab === tab && styles.activeTab,
-            ]}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
             onPress={() => setActiveTab(tab)}
           >
-            <Text
-              style={[
-                styles.tabLabel,
-                activeTab === tab && styles.activeTabLabel,
-              ]}
-            >
+            <Text style={[styles.tabLabel, activeTab === tab && styles.activeTabLabel]}>
               {tab === 'buylist' ? 'Buy List' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Products Tab */}
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
         {activeTab === 'products' && (
           <View>
             {tripProducts.length === 0 ? (
@@ -79,26 +72,26 @@ export default function TripDetailScreen() {
                 return (
                   <View key={product.id} style={styles.card}>
                     <View style={styles.cardHeader}>
-                      <View style={{ flex: 1 }}>
+                      <View style={styles.cardTitleWrap}>
                         <Text style={styles.cardTitle}>{product.name}</Text>
-                        <StatusBadge status={product.status === 'ready' ? 'in-stock' : 'packing'} />
+                        <StatusBadge status={product.status === 'ready' ? 'in-stock' : 'low-stock'} />
                       </View>
-                      <TouchableOpacity>
-                        <Edit3 {...({ size: 20, color: THEME.primary, strokeWidth: 2 } as any)} />
-                      </TouchableOpacity>
+                      <View style={styles.iconPill}>
+                        <ShoppingBag size={16} color={THEME.primary} />
+                      </View>
                     </View>
 
                     <View style={styles.cardStats}>
-                      <View>
+                      <View style={styles.statBlock}>
                         <Text style={styles.statLabel}>Cost</Text>
                         <Text style={styles.statValue}>RM{product.costPrice}</Text>
                       </View>
-                      <View>
+                      <View style={styles.statBlock}>
                         <Text style={styles.statLabel}>Selling</Text>
                         <Text style={styles.statValue}>RM{product.sellingPrice}</Text>
                       </View>
-                      <View>
-                        <Text style={styles.statLabel}>Total Qty</Text>
+                      <View style={styles.statBlock}>
+                        <Text style={styles.statLabel}>Qty</Text>
                         <Text style={styles.statValue}>{totalQuantity}</Text>
                       </View>
                     </View>
@@ -118,7 +111,6 @@ export default function TripDetailScreen() {
           </View>
         )}
 
-        {/* Orders Tab */}
         {activeTab === 'orders' && (
           <View>
             {tripOrders.length === 0 ? (
@@ -128,8 +120,8 @@ export default function TripDetailScreen() {
                 const orderItems = db.orderItems.filter((item: { orderId: string }) => item.orderId === order.id);
                 return (
                   <View key={order.id} style={styles.card}>
-                    <View style={styles.orderHeader}>
-                      <View style={{ flex: 1 }}>
+                    <View style={styles.cardHeader}>
+                      <View style={styles.cardTitleWrap}>
                         <Text style={styles.cardTitle}>{order.id}</Text>
                         <Text style={styles.orderCustomer}>{order.customerName}</Text>
                       </View>
@@ -143,25 +135,17 @@ export default function TripDetailScreen() {
                         return (
                           <View key={idx} style={styles.orderItem}>
                             <Text style={styles.itemName}>{product?.name ?? 'Product'}</Text>
-                            <Text style={styles.itemDetail}>
-                              {variant?.size} × {item.quantity} = RM
-                              {((product?.sellingPrice ?? 0) * item.quantity).toLocaleString()}
-                            </Text>
+                            <Text style={styles.itemDetail}>{variant?.size} × {item.quantity}</Text>
                           </View>
                         );
                       })}
                     </View>
 
                     <View style={styles.orderFooter}>
-                      <Text style={styles.orderTotal}>
-                        Total: RM{order.total.toLocaleString()}
-                      </Text>
+                      <Text style={styles.orderTotal}>Total RM{order.total.toLocaleString()}</Text>
                       {order.status === 'ready' && (
-                        <TouchableOpacity
-                          style={styles.shippingBtn}
-                          onPress={() => router.push('/shipping/generate')}
-                        >
-                          <Package {...({ size: 16, color: '#FFFFFF', strokeWidth: 2 } as any)} />
+                        <TouchableOpacity style={styles.shippingBtn} onPress={() => router.push('/shipping/generate')}>
+                          <Package size={16} color="#FFFFFF" strokeWidth={2} />
                           <Text style={styles.shippingBtnText}>Ship Now</Text>
                         </TouchableOpacity>
                       )}
@@ -173,14 +157,13 @@ export default function TripDetailScreen() {
           </View>
         )}
 
-        {/* Buy List Tab */}
         {activeTab === 'buylist' && (
           <View>
             {buyListItems.length === 0 ? (
               <Text style={styles.emptyText}>Buy list is clear</Text>
             ) : (
               <View>
-                <Text style={styles.sectionLabel}>Auto-Generated Buy List</Text>
+                <Text style={styles.sectionLabel}>Auto-generated buy list</Text>
                 {buyListItems.map((item: { id: string; productVariantId: string; quantity: number }) => {
                   const variant = getProductVariant(item.productVariantId, db);
                   const product = variant ? getProduct(variant.productId, db) : undefined;
@@ -192,20 +175,18 @@ export default function TripDetailScreen() {
                           <Text style={styles.buyListLabel}>Size {variant?.size}</Text>
                           <Text style={styles.buyListDetail}>Needed: {item.quantity}</Text>
                         </View>
-                        <View style={styles.buyListAction}>
-                          <TouchableOpacity
-                            style={styles.markBoughtBtn}
-                            onPress={() => {
-                              const success = markBuyListItemBought(item.id);
-                              if (success) {
-                                Alert.alert('Success', 'Buy list item marked as bought and inventory updated.');
-                              }
-                            }}
-                          >
-                            <CheckCircle2 {...({ size: 16, color: THEME.status.success, strokeWidth: 2 } as any)} />
-                            <Text style={styles.markBoughtText}>Mark Bought</Text>
-                          </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity
+                          style={styles.markBoughtBtn}
+                          onPress={() => {
+                            const success = markBuyListItemBought(item.id);
+                            if (success) {
+                              Alert.alert('Success', 'Buy list item marked as bought and inventory updated.');
+                            }
+                          }}
+                        >
+                          <CheckCircle2 size={16} color={THEME.status.success} strokeWidth={2} />
+                          <Text style={styles.markBoughtText}>Mark Bought</Text>
+                        </TouchableOpacity>
                       </View>
                     </View>
                   );
@@ -214,15 +195,13 @@ export default function TripDetailScreen() {
             )}
           </View>
         )}
-
-        <View style={{ height: SPACING.xl }} />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: THEME.background,
   },
@@ -235,30 +214,51 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.lg,
     paddingTop: SPACING.xl,
   },
+  iconButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.16)',
+  },
+  headerTextWrap: {
+    flex: 1,
+    marginHorizontal: SPACING.md,
+  },
+  headerLabel: {
+    color: '#EDE9FE',
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1.1,
+  },
   headerTitle: {
     fontSize: FONT_SIZES.lg,
     fontWeight: '700',
     color: '#FFFFFF',
+    marginTop: SPACING.xs,
   },
   tabsContainer: {
     flexDirection: 'row',
     backgroundColor: THEME.surface,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.sm,
     borderBottomWidth: 1,
     borderBottomColor: THEME.border,
   },
   tab: {
     flex: 1,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.sm,
     alignItems: 'center',
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
+    borderRadius: BORDER_RADIUS.md,
   },
   activeTab: {
-    borderBottomColor: THEME.primary,
+    backgroundColor: '#F5F3FF',
   },
   tabLabel: {
-    fontSize: FONT_SIZES.base,
+    fontSize: FONT_SIZES.sm,
     fontWeight: '600',
     color: THEME.text.secondary,
   },
@@ -267,12 +267,15 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  contentContainer: {
     paddingHorizontal: SPACING['2xl'],
     paddingTop: SPACING.lg,
+    paddingBottom: SPACING['3xl'],
   },
   card: {
     backgroundColor: THEME.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg,
     marginBottom: SPACING.md,
     ...THEME.shadow.small,
@@ -283,15 +286,27 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: SPACING.md,
   },
+  cardTitleWrap: {
+    flex: 1,
+    paddingRight: SPACING.md,
+  },
   cardTitle: {
     fontSize: FONT_SIZES.base,
     fontWeight: '700',
     color: THEME.text.primary,
     marginBottom: SPACING.sm,
   },
+  iconPill: {
+    width: 34,
+    height: 34,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 999,
+    backgroundColor: '#F5F3FF',
+  },
   cardStats: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     paddingVertical: SPACING.md,
     borderTopWidth: 1,
     borderTopColor: THEME.border,
@@ -299,17 +314,19 @@ const styles = StyleSheet.create({
     borderBottomColor: THEME.border,
     marginBottom: SPACING.md,
   },
+  statBlock: {
+    flex: 1,
+    alignItems: 'center',
+  },
   statLabel: {
     fontSize: FONT_SIZES.xs,
     color: THEME.text.secondary,
-    textAlign: 'center',
+    marginBottom: SPACING.xs,
   },
   statValue: {
     fontSize: FONT_SIZES.base,
     fontWeight: '700',
     color: THEME.primary,
-    textAlign: 'center',
-    marginTop: SPACING.xs,
   },
   sizeGrid: {
     flexDirection: 'row',
@@ -319,6 +336,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.md,
+    backgroundColor: '#F8FAFC',
+    marginHorizontal: SPACING.xs,
   },
   sizeLabel: {
     fontSize: FONT_SIZES.sm,
@@ -331,16 +351,9 @@ const styles = StyleSheet.create({
     color: THEME.text.primary,
     marginTop: SPACING.xs,
   },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: SPACING.md,
-  },
   orderCustomer: {
     fontSize: FONT_SIZES.sm,
     color: THEME.text.secondary,
-    marginTop: SPACING.xs,
   },
   orderItems: {
     borderTopWidth: 1,
@@ -364,13 +377,14 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
   orderFooter: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   orderTotal: {
     fontSize: FONT_SIZES.base,
     fontWeight: '700',
     color: THEME.primary,
-    marginBottom: SPACING.md,
   },
   shippingBtn: {
     flexDirection: 'row',
@@ -396,9 +410,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.border,
+    paddingTop: SPACING.sm,
   },
   buyListLabel: {
     fontSize: FONT_SIZES.sm,
@@ -409,15 +421,6 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.xs,
     color: THEME.text.secondary,
     marginTop: SPACING.xs,
-  },
-  buyListAction: {
-    alignItems: 'flex-end',
-  },
-  buyNeeded: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '700',
-    color: THEME.status.warning,
-    marginBottom: SPACING.sm,
   },
   markBoughtBtn: {
     flexDirection: 'row',

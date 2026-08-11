@@ -6,12 +6,12 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
+  SafeAreaView,
 } from 'react-native';
-import { ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Package2 } from 'lucide-react-native';
 import { useMockDatabase, addStock, reduceStock, getInventorySummary } from '../../services/mockDatabase';
 import { THEME, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../theme';
 import { StatCard } from '../../components/StatCard';
-import { SectionHeader } from '../../components/SectionHeader';
 import { StatusBadge } from '../../components/StatusBadge';
 
 export default function InventoryScreen() {
@@ -34,119 +34,157 @@ export default function InventoryScreen() {
   };
 
   return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Summary Cards */}
-      <View style={styles.statsContainer}>
-        <StatCard
-          label="Total Products"
-          value={inventorySummary.totalProducts.toString()}
-          variant="primary"
-        />
-        <StatCard
-          label="Low Stock"
-          value={inventorySummary.lowStock.toString()}
-          variant="warning"
-        />
-        <StatCard label="Out of Stock" value={inventorySummary.outOfStock.toString()} />
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.heroCard}>
+          <View>
+            <Text style={styles.eyebrow}>Stock control</Text>
+            <Text style={styles.heroTitle}>Inventory</Text>
+            <Text style={styles.heroSubtitle}>Review product availability and adjust stock levels in seconds.</Text>
+          </View>
+          <View style={styles.heroIcon}>
+            <Package2 size={24} color={THEME.primary} />
+          </View>
+        </View>
 
-      {/* Inventory Items */}
-      <SectionHeader title="Inventory Status" />
-      <View style={styles.itemsContainer}>
-        {inventoryItems.map(({ product, variants }) => {
-          const totalStock = variants.reduce((sum, variant) => sum + variant.stock, 0);
-          const status = totalStock === 0 ? 'out-of-stock' : totalStock <= 5 ? 'low-stock' : 'in-stock';
+        <View style={styles.statsContainer}>
+          <StatCard label="Total Products" value={inventorySummary.totalProducts.toString()} variant="primary" />
+          <StatCard label="Low Stock" value={inventorySummary.lowStock.toString()} variant="warning" />
+          <StatCard label="Out of Stock" value={inventorySummary.outOfStock.toString()} />
+        </View>
 
-          return (
-            <View key={product.id} style={styles.itemCard}>
-              <TouchableOpacity
-                style={styles.itemHeader}
-                onPress={() => toggleExpanded(product.id)}
-              >
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{product.name}</Text>
-                  <View style={styles.itemMeta}>
-                    <Text style={styles.itemStock}>Total: {totalStock} units</Text>
-                    <StatusBadge status={status as any} />
-                  </View>
-                </View>
-                {expandedItems.includes(product.id) ? (
-                  <ChevronUp {...({ size: 24, color: THEME.primary, strokeWidth: 2 } as any)} />
-                ) : (
-                  <ChevronDown {...({ size: 24, color: THEME.primary, strokeWidth: 2 } as any)} />
-                )}
-              </TouchableOpacity>
+        <View style={styles.itemsContainer}>
+          {inventoryItems.map(({ product, variants }) => {
+            const totalStock = variants.reduce((sum, variant) => sum + variant.stock, 0);
+            const status = totalStock === 0 ? 'out-of-stock' : totalStock <= 5 ? 'low-stock' : 'in-stock';
+            const expanded = expandedItems.includes(product.id);
 
-              {expandedItems.includes(product.id) && (
-                <View style={styles.itemDetails}>
-                  <View style={styles.sizeHeader}>
-                    <Text style={styles.sizeLabel}>Size</Text>
-                    <Text style={styles.sizeLabel}>Qty</Text>
-                  </View>
-                  {variants.map((variant) => (
-                    <View key={variant.id} style={styles.sizeRow}>
-                      <Text style={styles.sizeText}>{variant.size}</Text>
-                      <View style={styles.stockActions}>
-                        <Text style={styles.sizeText}>{variant.stock}</Text>
-                        <TextInput
-                          style={styles.qtyInput}
-                          keyboardType="numeric"
-                          value={adjustment[variant.id] ?? '1'}
-                          onChangeText={(value) => setAdjustment((prev) => ({ ...prev, [variant.id]: value }))}
-                          placeholderTextColor={THEME.text.light}
-                        />
-                        <TouchableOpacity
-                          style={styles.smallButton}
-                          onPress={() => {
-                            const amount = Number(adjustment[variant.id] ?? '1');
-                            addStock(variant.id, amount);
-                          }}
-                        >
-                          <Text style={styles.smallButtonText}>+ </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={styles.smallButton}
-                          onPress={() => {
-                            const amount = Number(adjustment[variant.id] ?? '1');
-                            reduceStock(variant.id, amount);
-                          }}
-                        >
-                          <Text style={styles.smallButtonText}>-</Text>
-                        </TouchableOpacity>
-                      </View>
+            return (
+              <View key={product.id} style={styles.itemCard}>
+                <TouchableOpacity style={styles.itemHeader} onPress={() => toggleExpanded(product.id)}>
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemName}>{product.name}</Text>
+                    <View style={styles.itemMeta}>
+                      <Text style={styles.itemStock}>Total: {totalStock} units</Text>
+                      <StatusBadge status={status as any} />
                     </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          );
-        })}
-      </View>
+                  </View>
+                  {expanded ? (
+                    <ChevronUp size={20} color={THEME.primary} strokeWidth={2} />
+                  ) : (
+                    <ChevronDown size={20} color={THEME.primary} strokeWidth={2} />
+                  )}
+                </TouchableOpacity>
 
-      <View style={{ height: SPACING.xl }} />
-    </ScrollView>
+                {expanded && (
+                  <View style={styles.itemDetails}>
+                    <View style={styles.sizeHeader}>
+                      <Text style={styles.sizeLabel}>Size</Text>
+                      <Text style={styles.sizeLabel}>Qty</Text>
+                    </View>
+                    {variants.map((variant) => (
+                      <View key={variant.id} style={styles.sizeRow}>
+                        <Text style={styles.sizeText}>{variant.size}</Text>
+                        <View style={styles.stockActions}>
+                          <Text style={styles.sizeText}>{variant.stock}</Text>
+                          <TextInput
+                            style={styles.qtyInput}
+                            keyboardType="numeric"
+                            value={adjustment[variant.id] ?? '1'}
+                            onChangeText={(value) => setAdjustment((prev) => ({ ...prev, [variant.id]: value }))}
+                            placeholderTextColor={THEME.text.light}
+                          />
+                          <TouchableOpacity
+                            style={styles.smallButton}
+                            onPress={() => {
+                              const amount = Number(adjustment[variant.id] ?? '1');
+                              addStock(variant.id, amount);
+                            }}
+                          >
+                            <Text style={styles.smallButtonText}>+</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.smallButton}
+                            onPress={() => {
+                              const amount = Number(adjustment[variant.id] ?? '1');
+                              reduceStock(variant.id, amount);
+                            }}
+                          >
+                            <Text style={styles.smallButtonText}>-</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: THEME.background,
+  },
   container: {
     flex: 1,
     backgroundColor: THEME.background,
+  },
+  content: {
     paddingHorizontal: SPACING['2xl'],
     paddingTop: SPACING['2xl'],
+    paddingBottom: SPACING['3xl'],
+  },
+  heroCard: {
+    backgroundColor: THEME.surface,
+    borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.lg,
+    marginBottom: SPACING.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    ...THEME.shadow.medium,
+  },
+  eyebrow: {
+    color: THEME.primary,
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    marginBottom: SPACING.xs,
+  },
+  heroTitle: {
+    fontSize: FONT_SIZES['2xl'],
+    fontWeight: '700',
+    color: THEME.text.primary,
+  },
+  heroSubtitle: {
+    fontSize: FONT_SIZES.sm,
+    color: THEME.text.secondary,
+    marginTop: SPACING.xs,
+  },
+  heroIcon: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 999,
+    backgroundColor: '#F5F3FF',
   },
   statsContainer: {
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.lg,
   },
   itemsContainer: {
     marginBottom: SPACING.xl,
   },
   itemCard: {
     backgroundColor: THEME.surface,
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     marginBottom: SPACING.md,
     overflow: 'hidden',
     ...THEME.shadow.medium,
@@ -169,8 +207,8 @@ const styles = StyleSheet.create({
   itemMeta: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: SPACING.sm,
     justifyContent: 'space-between',
+    marginTop: SPACING.sm,
   },
   itemStock: {
     fontSize: FONT_SIZES.sm,
@@ -200,6 +238,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingVertical: SPACING.sm,
+    alignItems: 'center',
   },
   sizeText: {
     fontSize: FONT_SIZES.sm,
@@ -208,7 +247,6 @@ const styles = StyleSheet.create({
   stockActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
   },
   qtyInput: {
     borderWidth: 1,
@@ -225,6 +263,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.sm,
     paddingHorizontal: SPACING.sm,
     paddingVertical: SPACING.xs,
+    marginLeft: SPACING.xs,
   },
   smallButtonText: {
     color: '#FFFFFF',
