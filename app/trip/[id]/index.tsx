@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft, CheckCircle2, Edit3 } from 'lucide-react-native';
+import { ArrowLeft, CheckCircle2, Edit3, Package } from 'lucide-react-native';
 import { MOCK_TRIPS } from '../../mockData';
 import { THEME, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../theme';
 import { StatusBadge } from '../../components/StatusBadge';
@@ -116,9 +116,9 @@ export default function TripDetailScreen() {
               <Text style={styles.emptyText}>No orders yet</Text>
             ) : (
               trip.orders.map((order) => (
-                <TouchableOpacity key={order.id} style={styles.card}>
+                <View key={order.id} style={styles.card}>
                   <View style={styles.orderHeader}>
-                    <View>
+                    <View style={{ flex: 1 }}>
                       <Text style={styles.cardTitle}>{order.orderId}</Text>
                       <Text style={styles.orderCustomer}>{order.customer}</Text>
                     </View>
@@ -141,8 +141,17 @@ export default function TripDetailScreen() {
                     <Text style={styles.orderTotal}>
                       Total: RM{order.total.toLocaleString()}
                     </Text>
+                    {order.status === 'ready' && (
+                      <TouchableOpacity
+                        style={styles.shippingBtn}
+                        onPress={() => router.push('/shipping/generate')}
+                      >
+                        <Package size={16} color="#FFFFFF" strokeWidth={2} />
+                        <Text style={styles.shippingBtnText}>Ship Now</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
-                </TouchableOpacity>
+                </View>
               ))
             )}
           </View>
@@ -203,6 +212,236 @@ export default function TripDetailScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: THEME.background,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: THEME.primary,
+    paddingHorizontal: SPACING['2xl'],
+    paddingVertical: SPACING.lg,
+    paddingTop: SPACING.xl,
+  },
+  headerTitle: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: THEME.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.border,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    alignItems: 'center',
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: THEME.primary,
+  },
+  tabLabel: {
+    fontSize: FONT_SIZES.base,
+    fontWeight: '600',
+    color: THEME.text.secondary,
+  },
+  activeTabLabel: {
+    color: THEME.primary,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: SPACING['2xl'],
+    paddingTop: SPACING.lg,
+  },
+  card: {
+    backgroundColor: THEME.surface,
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.lg,
+    marginBottom: SPACING.md,
+    ...THEME.shadow.small,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.md,
+  },
+  cardTitle: {
+    fontSize: FONT_SIZES.base,
+    fontWeight: '700',
+    color: THEME.text.primary,
+    marginBottom: SPACING.sm,
+  },
+  cardStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: THEME.border,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.border,
+    marginBottom: SPACING.md,
+  },
+  statLabel: {
+    fontSize: FONT_SIZES.xs,
+    color: THEME.text.secondary,
+    textAlign: 'center',
+  },
+  statValue: {
+    fontSize: FONT_SIZES.base,
+    fontWeight: '700',
+    color: THEME.primary,
+    textAlign: 'center',
+    marginTop: SPACING.xs,
+  },
+  sizeGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  sizeItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+  },
+  sizeLabel: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: THEME.text.secondary,
+  },
+  sizeQty: {
+    fontSize: FONT_SIZES.lg,
+    fontWeight: '700',
+    color: THEME.text.primary,
+    marginTop: SPACING.xs,
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: SPACING.md,
+  },
+  orderCustomer: {
+    fontSize: FONT_SIZES.sm,
+    color: THEME.text.secondary,
+    marginTop: SPACING.xs,
+  },
+  orderItems: {
+    borderTopWidth: 1,
+    borderTopColor: THEME.border,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.border,
+    paddingVertical: SPACING.md,
+    marginBottom: SPACING.md,
+  },
+  orderItem: {
+    marginBottom: SPACING.sm,
+  },
+  itemName: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: THEME.text.primary,
+  },
+  itemDetail: {
+    fontSize: FONT_SIZES.xs,
+    color: THEME.text.secondary,
+    marginTop: SPACING.xs,
+  },
+  orderFooter: {
+    alignItems: 'flex-end',
+  },
+  orderTotal: {
+    fontSize: FONT_SIZES.base,
+    fontWeight: '700',
+    color: THEME.primary,
+    marginBottom: SPACING.md,
+  },
+  shippingBtn: {
+    flexDirection: 'row',
+    backgroundColor: THEME.primary,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderRadius: BORDER_RADIUS.md,
+    alignItems: 'center',
+  },
+  shippingBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontSize: FONT_SIZES.sm,
+    marginLeft: SPACING.xs,
+  },
+  sectionLabel: {
+    fontSize: FONT_SIZES.base,
+    fontWeight: '700',
+    color: THEME.text.primary,
+    marginBottom: SPACING.md,
+  },
+  buyListRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: THEME.border,
+  },
+  buyListLabel: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '600',
+    color: THEME.text.primary,
+  },
+  buyListDetail: {
+    fontSize: FONT_SIZES.xs,
+    color: THEME.text.secondary,
+    marginTop: SPACING.xs,
+  },
+  buyListAction: {
+    alignItems: 'flex-end',
+  },
+  buyNeeded: {
+    fontSize: FONT_SIZES.sm,
+    fontWeight: '700',
+    color: THEME.status.warning,
+    marginBottom: SPACING.sm,
+  },
+  markBoughtBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    backgroundColor: '#D1FAE5',
+    borderRadius: BORDER_RADIUS.md,
+  },
+  markBoughtText: {
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '600',
+    color: THEME.status.success,
+    marginLeft: SPACING.xs,
+  },
+  emptyText: {
+    fontSize: FONT_SIZES.base,
+    color: THEME.text.secondary,
+    textAlign: 'center',
+    paddingVertical: SPACING['2xl'],
+  },
+  notFound: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: THEME.background,
+  },
+  notFoundText: {
+    fontSize: FONT_SIZES.lg,
+    color: THEME.text.secondary,
+  },
+});
 
 const styles = StyleSheet.create({
   container: {
