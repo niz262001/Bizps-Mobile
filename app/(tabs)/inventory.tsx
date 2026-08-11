@@ -1,26 +1,29 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
-import { MOCK_INVENTORY } from '../../mockData';
+import { useMockDatabase, addStock, reduceStock, getInventorySummary } from '../../services/mockDatabase';
 import { THEME, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../theme';
 import { StatCard } from '../../components/StatCard';
 import { SectionHeader } from '../../components/SectionHeader';
 import { StatusBadge } from '../../components/StatusBadge';
 
 export default function InventoryScreen() {
+  const db = useMockDatabase();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+  const [adjustment, setAdjustment] = useState<Record<string, string>>({});
 
-  const totalProducts = MOCK_INVENTORY.length;
-  const inStock = MOCK_INVENTORY.filter((i) => i.status === 'in-stock').length;
-  const lowStock = MOCK_INVENTORY.filter((i) => i.status === 'low-stock').length;
-  const outOfStock = MOCK_INVENTORY.filter((i) => i.status === 'out-of-stock')
-    .length;
+  const inventorySummary = useMemo(() => getInventorySummary(db), [db]);
+  const inventoryItems = useMemo(() => db.products.map((product) => ({
+    product,
+    variants: db.productVariants.filter((variant) => variant.productId === product.id),
+  })), [db]);
 
   const toggleExpanded = (productId: string) => {
     setExpandedItems((prev) =>
@@ -39,73 +42,88 @@ export default function InventoryScreen() {
       <View style={styles.statsContainer}>
         <StatCard
           label="Total Products"
-          value={totalProducts.toString()}
+          value={inventorySummary.totalProducts.toString()}
           variant="primary"
         />
         <StatCard
-          label="In Stock"
-          value={inStock.toString()}
-          variant="success"
-        />
-        <StatCard
           label="Low Stock"
-          value={lowStock.toString()}
+          value={inventorySummary.lowStock.toString()}
           variant="warning"
         />
-        <StatCard label="Out of Stock" value={outOfStock.toString()} />
+        <StatCard label="Out of Stock" value={inventorySummary.outOfStock.toString()} />
       </View>
 
       {/* Inventory Items */}
       <SectionHeader title="Inventory Status" />
       <View style={styles.itemsContainer}>
-        {MOCK_INVENTORY.map((item) => (
-          <View key={item.productId} style={styles.itemCard}>
-            <TouchableOpacity
-              style={styles.itemHeader}
-              onPress={() => toggleExpanded(item.productId)}
-            >
-              <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>{item.productName}</Text>
-                <View style={styles.itemMeta}>
-                  <Text style={styles.itemStock}>
-                    Total: {item.totalStock} units
-                  </Text>
-                  <StatusBadge status={item.status as any} />
-                </View>
-              </View>
-              {expandedItems.includes(item.productId) ? (
-                <ChevronUp size={24} color={THEME.primary} strokeWidth={2} />
-              ) : (
-                <ChevronDown size={24} color={THEME.primary} strokeWidth={2} />
-              )}
-            </TouchableOpacity>
+        {inventoryItems.map(({ product, variants }) => {
+          const totalStock = variants.reduce((sum, variant) => sum + variant.stock, 0);
+          const status = totalStock === 0 ? 'out-of-stock' : totalStock <= 5 ? 'low-stock' : 'in-stock';
 
-            {expandedItems.includes(item.productId) && (
-              <View style={styles.itemDetails}>
-                <View style={styles.sizeHeader}>
-                  <Text style={styles.sizeLabel}>Size</Text>
-                  <Text style={styles.sizeLabel}>Qty</Text>
-                </View>
-                {item.sizes.map((size, idx) => (
-                  <View key={idx} style={styles.sizeRow}>
-                    <Text style={styles.sizeText}>{size.size}</Text>
-                    <Text
-                      style={[
-                        styles.sizeText,
-                        size.quantity === 0 && {
-                          color: THEME.status.error,
-                          fontWeight: '700',
-                        },
-                      ]}
-                    >
-                      {size.quantity}
-                    </Text>
+          return (
+            <View key={product.id} style={styles.itemCard}>
+              <TouchableOpacity
+                style={styles.itemHeader}
+                onPress={() => toggleExpanded(product.id)}
+              >
+                <View style={styles.itemInfo}>
+                  <Text style={styles.itemName}>{product.name}</Text>
+                  <View style={styles.itemMeta}>
+                    <Text style={styles.itemStock}>Total: {totalStock} units</Text>
+                    <StatusBadge status={status as any} />
                   </View>
-                ))}
-              </View>
-            )}
-          </View>
-        ))}
+                </View>
+                {expandedItems.includes(product.id) ? (
+                  <ChevronUp {...({ size: 24, color: THEME.primary, strokeWidth: 2 } as any)} />
+                ) : (
+                  <ChevronDown {...({ size: 24, color: THEME.primary, strokeWidth: 2 } as any)} />
+                )}
+              </TouchableOpacity>
+
+              {expandedItems.includes(product.id) && (
+                <View style={styles.itemDetails}>
+                  <View style={styles.sizeHeader}>
+                    <Text style={styles.sizeLabel}>Size</Text>
+                    <Text style={styles.sizeLabel}>Qty</Text>
+                  </View>
+                  {variants.map((variant) => (
+                    <View key={variant.id} style={styles.sizeRow}>
+                      <Text style={styles.sizeText}>{variant.size}</Text>
+                      <View style={styles.stockActions}>
+                        <Text style={styles.sizeText}>{variant.stock}</Text>
+                        <TextInput
+                          style={styles.qtyInput}
+                          keyboardType="numeric"
+                          value={adjustment[variant.id] ?? '1'}
+                          onChangeText={(value) => setAdjustment((prev) => ({ ...prev, [variant.id]: value }))}
+                          placeholderTextColor={THEME.text.light}
+                        />
+                        <TouchableOpacity
+                          style={styles.smallButton}
+                          onPress={() => {
+                            const amount = Number(adjustment[variant.id] ?? '1');
+                            addStock(variant.id, amount);
+                          }}
+                        >
+                          <Text style={styles.smallButtonText}>+ </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.smallButton}
+                          onPress={() => {
+                            const amount = Number(adjustment[variant.id] ?? '1');
+                            reduceStock(variant.id, amount);
+                          }}
+                        >
+                          <Text style={styles.smallButtonText}>-</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          );
+        })}
       </View>
 
       <View style={{ height: SPACING.xl }} />
@@ -186,5 +204,30 @@ const styles = StyleSheet.create({
   sizeText: {
     fontSize: FONT_SIZES.sm,
     color: THEME.text.primary,
+  },
+  stockActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  qtyInput: {
+    borderWidth: 1,
+    borderColor: THEME.border,
+    borderRadius: BORDER_RADIUS.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    minWidth: 48,
+    marginHorizontal: SPACING.sm,
+    color: THEME.text.primary,
+  },
+  smallButton: {
+    backgroundColor: THEME.primary,
+    borderRadius: BORDER_RADIUS.sm,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+  },
+  smallButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
   },
 });

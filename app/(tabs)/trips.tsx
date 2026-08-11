@@ -9,6 +9,11 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Plus, Package, Truck as TruckIcon } from 'lucide-react-native';
+
+const iconProps = {
+  size: 20,
+  strokeWidth: 2,
+};
 import { MOCK_TRIPS } from '../../mockData';
 import { THEME, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../theme';
 
@@ -36,7 +41,7 @@ export default function TripsScreen() {
 
       <View style={styles.tripStats}>
         <View style={styles.statItem}>
-          <Package size={20} color={THEME.primary} strokeWidth={2} />
+          <Package {...({ ...iconProps, color: THEME.primary } as any)} />
           <View style={{ marginLeft: SPACING.md }}>
             <Text style={styles.statLabel}>Products</Text>
             <Text style={styles.statValue}>{trip.totalProducts}</Text>
@@ -44,7 +49,7 @@ export default function TripsScreen() {
         </View>
 
         <View style={styles.statItem}>
-          <TruckIcon size={20} color={THEME.status.info} strokeWidth={2} />
+          <TruckIcon {...({ ...iconProps, color: THEME.status.info } as any)} />
           <View style={{ marginLeft: SPACING.md }}>
             <Text style={styles.statLabel}>Orders</Text>
             <Text style={styles.statValue}>{trip.totalOrders}</Text>
@@ -60,7 +65,7 @@ export default function TripsScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.addButton}>
-          <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
+          <Plus {...({ ...iconProps, size: 20, color: '#FFFFFF', strokeWidth: 2.5 } as any)} />
           <Text style={styles.addButtonText}>Add Trip</Text>
         </TouchableOpacity>
       </View>
@@ -73,7 +78,7 @@ export default function TripsScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <TruckIcon size={48} color={THEME.text.light} strokeWidth={1.5} />
+            <TruckIcon {...({ size: 48, color: THEME.text.light, strokeWidth: 1.5 } as any)} />
             <Text style={styles.emptyText}>No active trips</Text>
           </View>
         }

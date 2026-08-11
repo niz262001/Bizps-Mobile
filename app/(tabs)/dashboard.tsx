@@ -6,33 +6,26 @@ import {
   Text,
   TouchableOpacity,
 } from 'react-native';
-import { MOCK_ORDERS } from '../../mockData';
+import { useMockDatabase, getDashboardCounts } from '../../services/mockDatabase';
 import { THEME, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../theme';
 import { StatCard } from '../../components/StatCard';
 import { SectionHeader } from '../../components/SectionHeader';
-import { StatusBadge } from '../../components/StatusBadge';
 
 export default function DashboardScreen() {
-  const totalOrders = MOCK_ORDERS.length;
-  const totalSales = MOCK_ORDERS.reduce((sum, order) => sum + order.total, 0);
-  const totalCost = MOCK_ORDERS.reduce(
-    (sum, order) =>
-      sum +
-      order.items.reduce((itemSum, item) => {
-        const costPrice = item.unitPrice * 0.5; // Assume cost is ~50% of selling price
-        return itemSum + costPrice * item.quantity;
-      }, 0),
-    0
-  );
+  const db = useMockDatabase();
+  const counts = getDashboardCounts(db);
+  const totalSales = db.orders.reduce((sum, order) => sum + order.total, 0);
+  const totalCost = db.orders.reduce((sum, order) => {
+    const itemCost = db.orderItems
+      .filter((item) => item.orderId === order.id)
+      .reduce((itemSum, item) => {
+        const variant = db.productVariants.find((candidate) => candidate.id === item.productVariantId);
+        const product = variant ? db.products.find((entry) => entry.id === variant.productId) : undefined;
+        return itemSum + (product?.costPrice ?? 0) * item.quantity;
+      }, 0);
+    return sum + itemCost;
+  }, 0);
   const totalProfit = totalSales - totalCost;
-
-  const statusCounts = {
-    pending: MOCK_ORDERS.filter((o) => o.status === 'pending').length,
-    packing: MOCK_ORDERS.filter((o) => o.status === 'packing').length,
-    ready: MOCK_ORDERS.filter((o) => o.status === 'ready').length,
-    shipped: MOCK_ORDERS.filter((o) => o.status === 'shipped').length,
-    delivered: MOCK_ORDERS.filter((o) => o.status === 'delivered').length,
-  };
 
   const dailyData = [
     {
@@ -74,7 +67,7 @@ export default function DashboardScreen() {
       <View style={styles.statsContainer}>
         <StatCard
           label="Order"
-          value={totalOrders.toString()}
+          value={counts.totalOrders.toString()}
           variant="primary"
         />
         <StatCard
@@ -133,23 +126,23 @@ export default function DashboardScreen() {
       <SectionHeader title="Order Status" />
       <View style={styles.statusGrid}>
         <TouchableOpacity style={styles.statusCard}>
-          <Text style={styles.statusValue}>{statusCounts.pending}</Text>
+          <Text style={styles.statusValue}>{counts.pendingPurchase}</Text>
           <Text style={styles.statusLabel}>Pending Purchase</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.statusCard}>
-          <Text style={styles.statusValue}>{statusCounts.packing}</Text>
+          <Text style={styles.statusValue}>{counts.packing}</Text>
           <Text style={styles.statusLabel}>Packing</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.statusCard}>
-          <Text style={styles.statusValue}>{statusCounts.ready}</Text>
+          <Text style={styles.statusValue}>{counts.readyToShip}</Text>
           <Text style={styles.statusLabel}>Ready to Ship</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.statusCard}>
-          <Text style={styles.statusValue}>{statusCounts.shipped}</Text>
+          <Text style={styles.statusValue}>{counts.shipped}</Text>
           <Text style={styles.statusLabel}>Shipped</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.statusCard}>
-          <Text style={styles.statusValue}>{statusCounts.delivered}</Text>
+          <Text style={styles.statusValue}>{counts.delivered}</Text>
           <Text style={styles.statusLabel}>Delivered</Text>
         </TouchableOpacity>
       </View>

@@ -49,7 +49,7 @@ export default function ShippingGenerateScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
+          <ArrowLeft {...({ size: 24, color: '#FFFFFF', strokeWidth: 2.5 } as any)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Generate Shipping</Text>
         <View style={{ width: 24 }} />
@@ -146,7 +146,7 @@ export default function ShippingGenerateScreen() {
               style={styles.generateButton}
               onPress={handleGenerateLabel}
             >
-              <Send size={18} color="#FFFFFF" strokeWidth={2} />
+              <Send {...({ size: 18, color: '#FFFFFF', strokeWidth: 2 } as any)} />
               <Text style={styles.generateButtonText}>Generate Label</Text>
             </TouchableOpacity>
           </View>

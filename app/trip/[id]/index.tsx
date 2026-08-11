@@ -1,23 +1,28 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft, CheckCircle2, Edit3, Package } from 'lucide-react-native';
-import { MOCK_TRIPS } from '../../mockData';
-import { THEME, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../theme';
-import { StatusBadge } from '../../components/StatusBadge';
+import { useMockDatabase, markBuyListItemBought, getTripProducts, getTripOrders, getTripBuyListItems, getProductVariant, getProduct } from '../../../services/mockDatabase';
+import { THEME, SPACING, FONT_SIZES, BORDER_RADIUS } from '../../../theme';
+import { StatusBadge } from '../../../components/StatusBadge';
 
 type TabType = 'products' | 'orders' | 'buylist';
 
 export default function TripDetailScreen() {
   const { id } = useLocalSearchParams();
+  const db = useMockDatabase();
   const [activeTab, setActiveTab] = useState<TabType>('products');
-  const trip = MOCK_TRIPS.find((t) => t.id === id);
+  const trip = db.trips.find((entry: { id: string }) => entry.id === id);
+  const tripProducts = useMemo(() => getTripProducts(trip?.id ?? '', db), [trip, db]);
+  const tripOrders = useMemo(() => getTripOrders(trip?.id ?? '', db), [trip, db]);
+  const buyListItems = useMemo(() => getTripBuyListItems(trip?.id ?? '', db), [trip, db]);
 
   if (!trip) {
     return (
@@ -32,7 +37,7 @@ export default function TripDetailScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
-          <ArrowLeft size={24} color="#FFFFFF" strokeWidth={2.5} />
+          <ArrowLeft {...({ size: 24, color: '#FFFFFF', strokeWidth: 2.5 } as any)} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{trip.name}</Text>
         <View style={{ width: 24 }} />
@@ -65,46 +70,50 @@ export default function TripDetailScreen() {
         {/* Products Tab */}
         {activeTab === 'products' && (
           <View>
-            {trip.products.length === 0 ? (
+            {tripProducts.length === 0 ? (
               <Text style={styles.emptyText}>No products added yet</Text>
             ) : (
-              trip.products.map((product) => (
-                <View key={product.id} style={styles.card}>
-                  <View style={styles.cardHeader}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.cardTitle}>{product.name}</Text>
-                      <StatusBadge status={product.status === 'ready' ? 'in-stock' : 'packing'} />
-                    </View>
-                    <TouchableOpacity>
-                      <Edit3 size={20} color={THEME.primary} strokeWidth={2} />
-                    </TouchableOpacity>
-                  </View>
-
-                  <View style={styles.cardStats}>
-                    <View>
-                      <Text style={styles.statLabel}>Cost</Text>
-                      <Text style={styles.statValue}>RM{product.costPrice}</Text>
-                    </View>
-                    <View>
-                      <Text style={styles.statLabel}>Selling</Text>
-                      <Text style={styles.statValue}>RM{product.sellingPrice}</Text>
-                    </View>
-                    <View>
-                      <Text style={styles.statLabel}>Total Qty</Text>
-                      <Text style={styles.statValue}>{product.totalQuantity}</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.sizeGrid}>
-                    {product.sizes.map((size) => (
-                      <View key={size.size} style={styles.sizeItem}>
-                        <Text style={styles.sizeLabel}>{size.size}</Text>
-                        <Text style={styles.sizeQty}>{size.quantity}</Text>
+              tripProducts.map((product: { id: string; name: string; status: string; costPrice: number; sellingPrice: number }) => {
+                const variants = db.productVariants.filter((variant: { productId: string }) => variant.productId === product.id);
+                const totalQuantity = variants.reduce((sum, variant) => sum + variant.stock, 0);
+                return (
+                  <View key={product.id} style={styles.card}>
+                    <View style={styles.cardHeader}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.cardTitle}>{product.name}</Text>
+                        <StatusBadge status={product.status === 'ready' ? 'in-stock' : 'packing'} />
                       </View>
-                    ))}
+                      <TouchableOpacity>
+                        <Edit3 {...({ size: 20, color: THEME.primary, strokeWidth: 2 } as any)} />
+                      </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.cardStats}>
+                      <View>
+                        <Text style={styles.statLabel}>Cost</Text>
+                        <Text style={styles.statValue}>RM{product.costPrice}</Text>
+                      </View>
+                      <View>
+                        <Text style={styles.statLabel}>Selling</Text>
+                        <Text style={styles.statValue}>RM{product.sellingPrice}</Text>
+                      </View>
+                      <View>
+                        <Text style={styles.statLabel}>Total Qty</Text>
+                        <Text style={styles.statValue}>{totalQuantity}</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.sizeGrid}>
+                      {variants.map((variant: { id: string; size: string; stock: number }) => (
+                        <View key={variant.id} style={styles.sizeItem}>
+                          <Text style={styles.sizeLabel}>{variant.size}</Text>
+                          <Text style={styles.sizeQty}>{variant.stock}</Text>
+                        </View>
+                      ))}
+                    </View>
                   </View>
-                </View>
-              ))
+                );
+              })
             )}
           </View>
         )}
@@ -112,47 +121,54 @@ export default function TripDetailScreen() {
         {/* Orders Tab */}
         {activeTab === 'orders' && (
           <View>
-            {trip.orders.length === 0 ? (
+            {tripOrders.length === 0 ? (
               <Text style={styles.emptyText}>No orders yet</Text>
             ) : (
-              trip.orders.map((order) => (
-                <View key={order.id} style={styles.card}>
-                  <View style={styles.orderHeader}>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.cardTitle}>{order.orderId}</Text>
-                      <Text style={styles.orderCustomer}>{order.customer}</Text>
-                    </View>
-                    <StatusBadge status={order.status} />
-                  </View>
-
-                  <View style={styles.orderItems}>
-                    {order.items.map((item, idx) => (
-                      <View key={idx} style={styles.orderItem}>
-                        <Text style={styles.itemName}>{item.productName}</Text>
-                        <Text style={styles.itemDetail}>
-                          {item.size} × {item.quantity} = RM
-                          {(item.unitPrice * item.quantity).toLocaleString()}
-                        </Text>
+              tripOrders.map((order) => {
+                const orderItems = db.orderItems.filter((item: { orderId: string }) => item.orderId === order.id);
+                return (
+                  <View key={order.id} style={styles.card}>
+                    <View style={styles.orderHeader}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.cardTitle}>{order.id}</Text>
+                        <Text style={styles.orderCustomer}>{order.customerName}</Text>
                       </View>
-                    ))}
-                  </View>
+                      <StatusBadge status={order.status} />
+                    </View>
 
-                  <View style={styles.orderFooter}>
-                    <Text style={styles.orderTotal}>
-                      Total: RM{order.total.toLocaleString()}
-                    </Text>
-                    {order.status === 'ready' && (
-                      <TouchableOpacity
-                        style={styles.shippingBtn}
-                        onPress={() => router.push('/shipping/generate')}
-                      >
-                        <Package size={16} color="#FFFFFF" strokeWidth={2} />
-                        <Text style={styles.shippingBtnText}>Ship Now</Text>
-                      </TouchableOpacity>
-                    )}
+                    <View style={styles.orderItems}>
+                      {orderItems.map((item: { productVariantId: string; quantity: number }, idx: number) => {
+                        const variant = db.productVariants.find((candidate: { id: string }) => candidate.id === item.productVariantId);
+                        const product = variant ? db.products.find((candidate: { id: string }) => candidate.id === variant.productId) : undefined;
+                        return (
+                          <View key={idx} style={styles.orderItem}>
+                            <Text style={styles.itemName}>{product?.name ?? 'Product'}</Text>
+                            <Text style={styles.itemDetail}>
+                              {variant?.size} × {item.quantity} = RM
+                              {((product?.sellingPrice ?? 0) * item.quantity).toLocaleString()}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+
+                    <View style={styles.orderFooter}>
+                      <Text style={styles.orderTotal}>
+                        Total: RM{order.total.toLocaleString()}
+                      </Text>
+                      {order.status === 'ready' && (
+                        <TouchableOpacity
+                          style={styles.shippingBtn}
+                          onPress={() => router.push('/shipping/generate')}
+                        >
+                          <Package {...({ size: 16, color: '#FFFFFF', strokeWidth: 2 } as any)} />
+                          <Text style={styles.shippingBtnText}>Ship Now</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   </View>
-                </View>
-              ))
+                );
+              })
             )}
           </View>
         )}
@@ -160,48 +176,40 @@ export default function TripDetailScreen() {
         {/* Buy List Tab */}
         {activeTab === 'buylist' && (
           <View>
-            {trip.orders.length === 0 ? (
-              <Text style={styles.emptyText}>No buy list (need orders first)</Text>
+            {buyListItems.length === 0 ? (
+              <Text style={styles.emptyText}>Buy list is clear</Text>
             ) : (
               <View>
                 <Text style={styles.sectionLabel}>Auto-Generated Buy List</Text>
-                {trip.products.map((product) => (
-                  <View key={product.id} style={styles.card}>
-                    <Text style={styles.cardTitle}>{product.name}</Text>
-                    {product.sizes.map((size) => (
-                      <View
-                        key={size.size}
-                        style={styles.buyListRow}
-                      >
+                {buyListItems.map((item: { id: string; productVariantId: string; quantity: number }) => {
+                  const variant = getProductVariant(item.productVariantId, db);
+                  const product = variant ? getProduct(variant.productId, db) : undefined;
+                  return (
+                    <View key={item.id} style={styles.card}>
+                      <Text style={styles.cardTitle}>{product?.name ?? 'Product'}</Text>
+                      <View style={styles.buyListRow}>
                         <View>
-                          <Text style={styles.buyListLabel}>Size {size.size}</Text>
-                          <Text style={styles.buyListDetail}>
-                            Current: {size.quantity}
-                          </Text>
+                          <Text style={styles.buyListLabel}>Size {variant?.size}</Text>
+                          <Text style={styles.buyListDetail}>Needed: {item.quantity}</Text>
                         </View>
                         <View style={styles.buyListAction}>
-                          {size.quantity < 10 && (
-                            <>
-                              <Text style={styles.buyNeeded}>
-                                Need: {10 - size.quantity}
-                              </Text>
-                              <TouchableOpacity style={styles.markBoughtBtn}>
-                                <CheckCircle2
-                                  size={16}
-                                  color={THEME.status.success}
-                                  strokeWidth={2}
-                                />
-                                <Text style={styles.markBoughtText}>
-                                  Mark Bought
-                                </Text>
-                              </TouchableOpacity>
-                            </>
-                          )}
+                          <TouchableOpacity
+                            style={styles.markBoughtBtn}
+                            onPress={() => {
+                              const success = markBuyListItemBought(item.id);
+                              if (success) {
+                                Alert.alert('Success', 'Buy list item marked as bought and inventory updated.');
+                              }
+                            }}
+                          >
+                            <CheckCircle2 {...({ size: 16, color: THEME.status.success, strokeWidth: 2 } as any)} />
+                            <Text style={styles.markBoughtText}>Mark Bought</Text>
+                          </TouchableOpacity>
                         </View>
                       </View>
-                    ))}
-                  </View>
-                ))}
+                    </View>
+                  );
+                })}
               </View>
             )}
           </View>
@@ -443,217 +451,4 @@ const styles = StyleSheet.create({
   },
 });
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: THEME.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: THEME.primary,
-    paddingHorizontal: SPACING['2xl'],
-    paddingVertical: SPACING.lg,
-    paddingTop: SPACING.xl,
-  },
-  headerTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: THEME.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.border,
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.md,
-    alignItems: 'center',
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: THEME.primary,
-  },
-  tabLabel: {
-    fontSize: FONT_SIZES.base,
-    fontWeight: '600',
-    color: THEME.text.secondary,
-  },
-  activeTabLabel: {
-    color: THEME.primary,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: SPACING['2xl'],
-    paddingTop: SPACING.lg,
-  },
-  card: {
-    backgroundColor: THEME.surface,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-    ...THEME.shadow.small,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: SPACING.md,
-  },
-  cardTitle: {
-    fontSize: FONT_SIZES.base,
-    fontWeight: '700',
-    color: THEME.text.primary,
-    marginBottom: SPACING.sm,
-  },
-  cardStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: SPACING.md,
-    borderTopWidth: 1,
-    borderTopColor: THEME.border,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.border,
-    marginBottom: SPACING.md,
-  },
-  statLabel: {
-    fontSize: FONT_SIZES.xs,
-    color: THEME.text.secondary,
-    textAlign: 'center',
-  },
-  statValue: {
-    fontSize: FONT_SIZES.base,
-    fontWeight: '700',
-    color: THEME.primary,
-    textAlign: 'center',
-    marginTop: SPACING.xs,
-  },
-  sizeGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  sizeItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-  },
-  sizeLabel: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: THEME.text.secondary,
-  },
-  sizeQty: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: THEME.text.primary,
-    marginTop: SPACING.xs,
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: SPACING.md,
-  },
-  orderCustomer: {
-    fontSize: FONT_SIZES.sm,
-    color: THEME.text.secondary,
-    marginTop: SPACING.xs,
-  },
-  orderItems: {
-    borderTopWidth: 1,
-    borderTopColor: THEME.border,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.border,
-    paddingVertical: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  orderItem: {
-    marginBottom: SPACING.sm,
-  },
-  itemName: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: THEME.text.primary,
-  },
-  itemDetail: {
-    fontSize: FONT_SIZES.xs,
-    color: THEME.text.secondary,
-    marginTop: SPACING.xs,
-  },
-  orderFooter: {
-    alignItems: 'flex-end',
-  },
-  orderTotal: {
-    fontSize: FONT_SIZES.base,
-    fontWeight: '700',
-    color: THEME.primary,
-  },
-  sectionLabel: {
-    fontSize: FONT_SIZES.base,
-    fontWeight: '700',
-    color: THEME.text.primary,
-    marginBottom: SPACING.md,
-  },
-  buyListRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: SPACING.md,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.border,
-  },
-  buyListLabel: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: THEME.text.primary,
-  },
-  buyListDetail: {
-    fontSize: FONT_SIZES.xs,
-    color: THEME.text.secondary,
-    marginTop: SPACING.xs,
-  },
-  buyListAction: {
-    alignItems: 'flex-end',
-  },
-  buyNeeded: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '700',
-    color: THEME.status.warning,
-    marginBottom: SPACING.sm,
-  },
-  markBoughtBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
-    backgroundColor: '#D1FAE5',
-    borderRadius: BORDER_RADIUS.md,
-  },
-  markBoughtText: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '600',
-    color: THEME.status.success,
-    marginLeft: SPACING.xs,
-  },
-  emptyText: {
-    fontSize: FONT_SIZES.base,
-    color: THEME.text.secondary,
-    textAlign: 'center',
-    paddingVertical: SPACING['2xl'],
-  },
-  notFound: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: THEME.background,
-  },
-  notFoundText: {
-    fontSize: FONT_SIZES.lg,
-    color: THEME.text.secondary,
-  },
-});
+

@@ -16,9 +16,7 @@ export function SectionHeader({ title, onViewAll }: SectionHeaderProps) {
         <TouchableOpacity onPress={onViewAll} style={styles.button}>
           <Text style={styles.buttonText}>View All</Text>
           <ChevronRight
-            size={16}
-            color={THEME.primary}
-            strokeWidth={2.5}
+            {...({ size: 16, color: THEME.primary, strokeWidth: 2.5 } as any)}
           />
         </TouchableOpacity>
       )}

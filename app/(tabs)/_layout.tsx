@@ -9,6 +9,11 @@ import {
   User,
 } from 'lucide-react-native';
 
+const iconProps = {
+  size: 24,
+  strokeWidth: 2,
+};
+
 export default function TabsLayout() {
   const TAB_ICON_SIZE = 24;
   const THEME_PRIMARY = '#7C3AED';
@@ -37,10 +42,7 @@ export default function TabsLayout() {
         },
         headerRight: () => (
           <User
-            size={24}
-            color="#FFFFFF"
-            style={{ marginRight: 16 }}
-            strokeWidth={2}
+            {...({ ...iconProps, color: '#FFFFFF', style: { marginRight: 16 } } as any)}
           />
         ),
       }}
@@ -52,7 +54,7 @@ export default function TabsLayout() {
           tabBarLabel: 'Dashboard',
           headerTitle: 'Dashboard',
           tabBarIcon: ({ color }) => (
-            <Home size={TAB_ICON_SIZE} color={color} strokeWidth={2} />
+            <Home {...({ ...iconProps, size: TAB_ICON_SIZE, color } as any)} />
           ),
         }}
       />
@@ -64,7 +66,7 @@ export default function TabsLayout() {
           tabBarLabel: 'Trips',
           headerTitle: 'Trips',
           tabBarIcon: ({ color }) => (
-            <Truck size={TAB_ICON_SIZE} color={color} strokeWidth={2} />
+            <Truck {...({ ...iconProps, size: TAB_ICON_SIZE, color } as any)} />
           ),
         }}
       />
@@ -76,7 +78,7 @@ export default function TabsLayout() {
           tabBarLabel: 'Inventory',
           headerTitle: 'Inventory',
           tabBarIcon: ({ color }) => (
-            <Package size={TAB_ICON_SIZE} color={color} strokeWidth={2} />
+            <Package {...({ ...iconProps, size: TAB_ICON_SIZE, color } as any)} />
           ),
         }}
       />
@@ -88,7 +90,7 @@ export default function TabsLayout() {
           tabBarLabel: 'Finance',
           headerTitle: 'Finance',
           tabBarIcon: ({ color }) => (
-            <DollarSign size={TAB_ICON_SIZE} color={color} strokeWidth={2} />
+            <DollarSign {...({ ...iconProps, size: TAB_ICON_SIZE, color } as any)} />
           ),
         }}
       />
@@ -100,7 +102,7 @@ export default function TabsLayout() {
           tabBarLabel: 'Reports',
           headerTitle: 'Reports',
           tabBarIcon: ({ color }) => (
-            <BarChart3 size={TAB_ICON_SIZE} color={color} strokeWidth={2} />
+            <BarChart3 {...({ ...iconProps, size: TAB_ICON_SIZE, color } as any)} />
           ),
         }}
       />
