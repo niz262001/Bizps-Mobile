@@ -1,5 +1,23 @@
 # BizPS Mobile v1 - Application Structure
 
+## Mobile-Only Scope
+
+OpsPS is now focused on Android phone development in Expo Go. Web rendering, browser compatibility, Expo web, and SSR are not part of the current scope.
+
+### Current Focus
+- Stable Expo Go launch on Android
+- Landing screen
+- Login
+- Dashboard
+- Trips
+- Add Product
+- Upload Image
+- Generate Caption
+- Share to WhatsApp / Telegram / Instagram / Facebook / TikTok using mobile share intents
+- Inventory
+- Finance
+- Reports
+
 ## Screens & Navigation
 
 ### Bottom Tabs (Primary Navigation)

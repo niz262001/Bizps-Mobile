@@ -1,6 +1,28 @@
 # BizPS Mobile v1
 
-A complete React Native + Expo mobile application for managing business operations (trips, products, orders, inventory, finance, reports, and shipping).
+OpsPS is now scoped as a mobile-only React Native + Expo application for Android phones. The focus is on stable Expo Go launches, native phone UX, and later APK delivery.
+
+## Current Scope
+
+- Target platform: Android phone
+- Runtime: Expo Go
+- Delivery target: APK build later
+- Out of scope: Expo web, browser rendering, SSR, and web compatibility
+
+## Priorities
+
+1. Stable Expo Go launch on Android
+2. Landing screen
+3. Login
+4. Dashboard
+5. Trips
+6. Add Product
+7. Upload Image
+8. Generate Caption
+9. Share to WhatsApp / Telegram / Instagram / Facebook / TikTok using mobile share intents
+10. Inventory
+11. Finance
+12. Reports
 
 ## Features
 
@@ -9,7 +31,7 @@ A complete React Native + Expo mobile application for managing business operatio
 - Inventory tracking with expandable size variants and stock alerts
 - Finance tracking for capital, cash, bank, and expenses
 - Reporting with P&L, sales, expense, trip, and inventory modules
-- Shipping label generation placeholder (EasyParcel-like experience)
+- Mobile-first sharing flow for social and messaging apps
 
 ## Tech Stack
 
